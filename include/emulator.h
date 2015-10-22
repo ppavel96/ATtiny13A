@@ -1,4 +1,7 @@
-#include <cstddef>
+#pragma once
+
+#include <cstdio>
+#include <ctime>
 #include <vector>
 
 /** All consts lie here */
@@ -13,25 +16,73 @@ struct HardwareInfo {
     }
 };
 
+/** Log mode enum */
+enum ELogMode {
+    Silent = 0,
+    Errors = 1,
+    Warnings = (1 << 1),
+    Interrupts = (1 << 2),
+    InOut = (1 << 3),
+    All = (1 << 4),
+};
+
+/** Emulation params */
+struct RunParams {
+    FILE *logfile;
+    FILE *infile, *outfile;
+
+    time_t lifetime;
+    ELogMode LogMode;
+
+    RunParams() {
+        logfile = stdout;
+        infile = nullptr;
+        outfile = nullptr;
+        lifetime = 1000;
+        LogMode = ELogMode::Silent;
+    }
+};
+
 /** Emulator of ATtiny13A */
 class Emulator {
+    std::vector<unsigned short> FlashMemory;
+    std::vector<unsigned char> EEPROM, SRAM;
+    unsigned short PC;
+
     HardwareInfo Info;
-    std::vector<char> FlashMemory, EEPROM, SRAM;
+    RunParams Params;
+
+    /** Checks for interrupt and launch ISR if needed. Returns true if interrupt happened */
+    bool CheckForInterrupt();
+
+    /** Log */
+    void log(ELogMode LogMode, const char* message);
 
 public:
-    Emulator();
+    /** Creates an emulator and uploads flash and EEPROM images in it */
+    Emulator(const std::vector<unsigned short> &InFlashMemory, const std::vector<unsigned char> &InEEPROM, const RunParams& InParams);
 
-    /** Perform a tick */
+    Emulator(const Emulator&) = delete;
+    Emulator& operator=(const Emulator&) = delete;
+
+    /** Runs an emulator (in the current thread) */
+    void Run();
+
+    /** Processes the next instruction */
+    void ProcessInstruction();
 
     /** Retrieve info about hardware */
     inline const HardwareInfo& GetHardwareInfo() const { return Info; }
 
     /** Get image of flash memory */
-    inline const std::vector<char>& GetFlashMemory() const { return FlashMemory; }
+    inline const std::vector<unsigned short>& GetFlashMemory() const { return FlashMemory; }
 
     /** Get image of EEPROM */
-    inline const std::vector<char>& GetEEPROM() const { return EEPROM; }
+    inline const std::vector<unsigned char>& GetEEPROM() const { return EEPROM; }
 
     /** Get image of SRAM */
-    inline const std::vector<char>& GetSRAM() const { return SRAM; }
+    inline const std::vector<unsigned char>& GetSRAM() const { return SRAM; }
+
+    /** Get PC */
+    inline unsigned short GetPC() const { return PC; }
 };
