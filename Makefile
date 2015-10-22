@@ -11,7 +11,7 @@ CFLAGS = -I$(INC_DIR) -std=c++11 -Wall -O2
 _DEPS = emulator.h
 DEPS = $(patsubst %,$(INC_DIR)/%,$(_DEPS))
 
-_OBJ = main.o emulator.o
+_OBJ = main.o emulator.o image_reader.o
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEPS)
