@@ -1,29 +1,27 @@
 #pragma once
 
+#include <vector>
 #include <cstdio>
 #include <ctime>
-#include <vector>
 
 /** All consts lie here */
 struct HardwareInfo {
     // Ammount of memory in bytes
     size_t FlashMemory, EEPROM, SRAM;
 
-    HardwareInfo() {
-        FlashMemory = 1024;
-        EEPROM = 64;
-        SRAM = 64;
-    }
+    HardwareInfo() : FlashMemory(1024),
+                     EEPROM(64),
+                     SRAM(64) { }
 };
 
 /** Log mode enum */
 enum ELogMode {
-    Silent = 0,
-    Errors = 1,
-    Warnings = (1 << 1),
+    Silent     = 0,
+    Errors     = (1 << 0),
+    Warnings   = (1 << 1),
     Interrupts = (1 << 2),
-    InOut = (1 << 3),
-    All = (1 << 4),
+    InOut      = (1 << 3),
+    All        = (1 << 4)
 };
 
 /** Emulation params */
@@ -34,13 +32,11 @@ struct RunParams {
     time_t lifetime;
     ELogMode LogMode;
 
-    RunParams() {
-        logfile = stdout;
-        infile = nullptr;
-        outfile = nullptr;
-        lifetime = 1000;
-        LogMode = ELogMode::Silent;
-    }
+    RunParams() : logfile(stdout),
+                  infile(nullptr),
+                  outfile(nullptr),
+                  lifetime(1000),
+                  LogMode(ELogMode::Silent) { }
 };
 
 /** Emulator of ATtiny13A */

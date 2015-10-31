@@ -6,12 +6,12 @@ BIN_DIR = ./bin
 APP_NAME = $(BIN_DIR)/emulator
 
 CC = g++
-CFLAGS = -I$(INC_DIR) -std=c++11 -Wall -O2
+CFLAGS = -I$(INC_DIR) -std=c++11 -O2
 
 _DEPS = emulator.h
 DEPS = $(patsubst %,$(INC_DIR)/%,$(_DEPS))
 
-_OBJ = main.o emulator.o image_reader.o
+_OBJ = main.o emulator.o image_manager.o
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEPS)
@@ -23,4 +23,4 @@ $(APP_NAME): $(OBJ)
 .PHONY: clean
 clean:
 	rm -f $(OBJ_DIR)/*.o
-	rm $(APP_NAME)
+	rm -f $(APP_NAME)
