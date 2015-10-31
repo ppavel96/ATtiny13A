@@ -17,15 +17,22 @@ void Emulator::log(ELogMode LogMode, const char* message) {
 }
 
 void Emulator::Run() {
+    std::clock_t start_time = std::clock();
+
     while (true) {
         // do some timers, check for input, print logs....
         // ....
 
         if (!CheckForInterrupt())
             ProcessInstruction();
+
+        if ((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000) > Params.lifetime)
+            return;
     }
 }
 
 void Emulator::ProcessInstruction() {
+    unsigned short instruction = FlashMemory[PC];
+    // switch (instruction) ...
     // ...
 }
