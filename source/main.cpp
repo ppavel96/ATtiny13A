@@ -8,7 +8,7 @@
 
 /** Determine if host is little endian */
 bool IsLittleEndian() {
-    unsigned short x = 1;
+    const unsigned short x = 1;
     return *((unsigned char *) &x) == 1;
 }
 
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     Options.push_back(CmdOption("-logall",       "  -logall                  Enable log of every instruction",           false));
 
     /** Creating command line parser */
-    CmdParser Parser(Options, argc, argv);
+    CmdParser Parser(std::move(Options), argc, argv);
     CmdOption OutOption("", "", false);
 
     /** Proccessing arguments */
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
     // Reading flash
     std::vector<unsigned short> FlashMemory(1024);
     ImageManager::ReadImage(Flash.c_str(), (unsigned char*)FlashMemory.data(), FlashMemory.size() * 2);
-    if (IsLittleEndian())
+    if (!IsLittleEndian())
         for (size_t i = 0, sz = FlashMemory.size(); i < sz; ++i)
             FlashMemory[i] = (FlashMemory[i] << 8) + (FlashMemory[i] >> 8);
     
@@ -135,12 +135,13 @@ int main(int argc, char** argv) {
         ImageManager::ReadImage(EEPROM_IN.c_str(), EEPROMMemory.data(), EEPROMMemory.size());
 
     // Emulation
-    Emulator ATtiny13A(FlashMemory, EEPROMMemory, DefaultParams);
+    Emulator ATtiny13A(std::move(FlashMemory), std::move(EEPROMMemory), DefaultParams);
 
     std::cout << "emulator: emulation started\n";
     ATtiny13A.Run();
     std::cout << "emulator: emulation stoped\n";
 
     // Saving EEPROM
-    ImageManager::WriteHexImage(EEPROM_OUT.c_str(), ATtiny13A.GetEEPROM().data(), ATtiny13A.GetEEPROM().size());
+    if (!EEPROM_OUT.empty())
+        ImageManager::WriteHexImage(EEPROM_OUT.c_str(), ATtiny13A.GetEEPROM().data(), ATtiny13A.GetEEPROM().size());
 }

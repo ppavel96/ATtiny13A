@@ -6,7 +6,7 @@ BIN_DIR = ./bin
 APP_NAME = $(BIN_DIR)/emulator
 
 CC = g++
-CFLAGS = -I$(INC_DIR) -std=c++11 -Wall -O2
+CFLAGS = -I$(INC_DIR) -std=c++17 -Wall -O2
 
 _DEPS = emulator.h
 DEPS = $(patsubst %,$(INC_DIR)/%,$(_DEPS))
