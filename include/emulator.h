@@ -35,7 +35,7 @@ struct RunParams {
     RunParams() : logfile(stdout),
                   infile(nullptr),
                   outfile(nullptr),
-                  lifetime(1000),
+                  lifetime(10),
                   LogMode(ELogMode::Silent) { }
 };
 

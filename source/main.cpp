@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     /** Configuring possible command line options */
     std::vector<CmdOption> Options;
     Options.push_back(CmdOption("--help",        "  --help                   Display this information",                  false));
-    Options.push_back(CmdOption("-lifetime",     "  -lifetime N              Stop emulator after N ms. Default is 1000", true));
+    Options.push_back(CmdOption("-lifetime",     "  -lifetime N              Stop emulator after N ms. Default is 10",   true));
     Options.push_back(CmdOption("-eeprom_in",    "  -eeprom_in <file>        Initialize EEPROM with content of <file>",  true));
     Options.push_back(CmdOption("-eeprom_out",   "  -in <file>               Specify <file> in CSV format as input",     true));
     Options.push_back(CmdOption("-in",           "  -out <file>              Specify <file> in CSV format as output",    true));
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 
         if (OutOption.GetName() == "-out") {
             DefaultParams.outfile = fopen(OutOption.GetArgAsString().c_str(), "w");
-            if (DefaultParams.infile == nullptr) {
+            if (DefaultParams.outfile == nullptr) {
                 std::cout << "emulator: fatal error: coudn't open file named " << OutOption.GetArgAsString() << "\n";
                 return 0;
             }
@@ -80,8 +80,8 @@ int main(int argc, char** argv) {
         }
 
         if (OutOption.GetName() == "-logfile") {
-            DefaultParams.infile = fopen(OutOption.GetArgAsString().c_str(), "w");
-            if (DefaultParams.infile == nullptr) {
+            DefaultParams.logfile = fopen(OutOption.GetArgAsString().c_str(), "w");
+            if (DefaultParams.logfile == nullptr) {
                 std::cout << "emulator: fatal error: coudn't open file named " << OutOption.GetArgAsString() << "\n";
                 return 0;
             }
