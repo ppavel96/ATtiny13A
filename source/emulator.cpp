@@ -24,11 +24,6 @@ bool Emulator::CheckForInterrupt() {
     return false;
 }
 
-void Emulator::log(ELogMode LogMode, const char* message) {
-    if (Params.LogMode & LogMode)
-        fprintf(Params.logfile, "%s", message);
-}
-
 void Emulator::Run() {
     std::clock_t start_time = std::clock();
 
@@ -49,9 +44,8 @@ void Emulator::ProcessInstruction() {
     if (PC >= FlashMemory.size()) {
         PC = PC % (Info.FlashMemory / 2);
 
-        char message[500];
-        snprintf(message, sizeof(message), "PC OVERFLOW WARNING: PC -> 0x%04hx", PC);
-        log(ELogMode::Warnings, message);
+        if (Params.LogMode & ELogMode::Warnings)
+            fprintf(Params.logfile, "PC OVERFLOW WARNING: PC -> 0x%04hx", PC);
     }
 
     /** Get instruction */
@@ -85,10 +79,9 @@ void Emulator::ProcessInstruction() {
         SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** Logging */
-        char message[500];
-        snprintf(message, sizeof(message), " ADD: PC=0x%04hx, r=%hhu, d=%hhu, Rr=%hhu, Rd=%hhu, R=%hhu, SREG=" BYTETOBINARYPATTERN "\n",
-            PC, r, d, Rr, Rd, R, BYTETOBINARY(SRAM[0x5Fu]));
-        log(ELogMode::All, message);
+        if (Params.LogMode & ELogMode::All)
+            fprintf(Params.logfile, " ADD: PC=0x%04hx, r=%hhu, d=%hhu, Rr=%hhu, Rd=%hhu, R=%hhu, SREG=" BYTETOBINARYPATTERN "\n",
+                PC, r, d, Rr, Rd, R, BYTETOBINARY(SRAM[0x5Fu]));
 
         /** PC */
         ++PC;
@@ -120,10 +113,9 @@ void Emulator::ProcessInstruction() {
         SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** Logging */
-        char message[500];
-        snprintf(message, sizeof(message), " ADD: PC=0x%04hx, r=%hhu, d=%hhu, Rr=%hhu, Rd=%hhu, R=%hhu, SREG=" BYTETOBINARYPATTERN "\n",
-            PC, r, d, Rr, Rd, R, BYTETOBINARY(SRAM[0x5Fu]));
-        log(ELogMode::All, message);
+        if (Params.LogMode & ELogMode::All)
+            fprintf(Params.logfile, " ADD: PC=0x%04hx, r=%hhu, d=%hhu, Rr=%hhu, Rd=%hhu, R=%hhu, SREG=" BYTETOBINARYPATTERN "\n",
+                PC, r, d, Rr, Rd, R, BYTETOBINARY(SRAM[0x5Fu]));
 
         /** PC */
         ++PC;
@@ -201,9 +193,8 @@ void Emulator::ProcessInstruction() {
             NextPC = PC + k + 1u;
 
         /** Logging */
-        char message[500];
-        snprintf(message, sizeof(message), "RJMP: PC=0x%04hx, NextPC=0x%04hx, k=%hu\n", PC, NextPC, k);
-        log(ELogMode::All, message);
+        if (Params.LogMode & ELogMode::All)
+            fprintf(Params.logfile, "RJMP: PC=0x%04hx, NextPC=0x%04hx, k=%hu\n", PC, NextPC, k);
 
         /** PC */
         PC = NextPC;
@@ -228,9 +219,8 @@ void Emulator::ProcessInstruction() {
         SRAM[d] = K;
 
         /** Logging */
-        char message[500];
-        snprintf(message, sizeof(message), " LDI: PC=0x%04hx, d=%hhu, K=%hhu\n", PC, d, K);
-        log(ELogMode::All, message);
+        if (Params.LogMode & ELogMode::All)
+            fprintf(Params.logfile, " LDI: PC=0x%04hx, d=%hhu, K=%hhu\n", PC, d, K);
 
         /** PC */
         ++PC;
@@ -249,9 +239,8 @@ void Emulator::ProcessInstruction() {
     /** NOP: 0000 0000 0000 0000 */
     if (instruction == 0) {
         /** Logging */
-        char message[500];
-        snprintf(message, sizeof(message), " NOP: PC=0x%04hx\n", PC);
-        log(ELogMode::All, message);
+        if (Params.LogMode & ELogMode::All)
+            fprintf(Params.logfile, " NOP: PC=0x%04hx\n", PC);
 
         /** PC */
         ++PC;
@@ -260,9 +249,8 @@ void Emulator::ProcessInstruction() {
     }
 
     /** Unknown instruction */
-    char message[500];
-    snprintf(message, sizeof(message), "INVALID INSTRUCTION ERROR: PC=0x%04hx\n", PC);
-    log(ELogMode::Errors, message);
+    if (Params.LogMode & ELogMode::Errors)
+        fprintf(Params.logfile, "INVALID INSTRUCTION ERROR: PC=0x%04hx\n", PC);
 
     Params.lifetime = -1;
 }

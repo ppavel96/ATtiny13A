@@ -51,9 +51,6 @@ class Emulator {
     /** Checks for interrupt and launch ISR if needed. Returns true if interrupt happened */
     bool CheckForInterrupt();
 
-    /** Log */
-    void log(ELogMode LogMode, const char* message);
-
 public:
     /** Creates an emulator and uploads flash and EEPROM images in it */
     Emulator(const std::vector<unsigned short> &InFlashMemory, const std::vector<unsigned char> &InEEPROM, const RunParams& InParams);
