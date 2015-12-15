@@ -958,6 +958,465 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         ++ATtiny13A.PC;
     }));
 
+    InstructionSet.push_back(Instruction("LDS (32bit)", "1001000ddddd0000kkkkkkkkkkkkkkkk", 2, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint16_t k = ATtiny13A.FlashMemory[ATtiny13A.PC + 1];
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[k];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LDS (16bit)", "10100kkkddddkkkk", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0xFu) + 16;
+        uint8_t k = (BIT_GET_INV(instruction, 8) << 7) | (BIT_GET(instruction, 8) << 6) | (BIT_GET(instruction, 10) << 5) |
+            (BIT_GET(instruction, 9) << 4) | (BIT_GET(instruction, 3) << 3) | (BIT_GET(instruction, 2) << 2) | (BIT_GET(instruction, 1) << 1) | (BIT_GET(instruction, 0) << 0);
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[k];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (X)", "1001000ddddd1100", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Xl = ATtiny13A.SRAM[26];
+        uint16_t Xh = ATtiny13A.SRAM[27];
+        uint16_t X = (Xh << 8) | Xl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[X];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (X+)", "1001000ddddd1101", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Xl = ATtiny13A.SRAM[26];
+        uint16_t Xh = ATtiny13A.SRAM[27];
+        uint16_t X = (Xh << 8) | Xl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[X++];
+
+        ATtiny13A.SRAM[26] = X;
+        ATtiny13A.SRAM[27] = X >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (-X)", "1001000ddddd1110", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Xl = ATtiny13A.SRAM[26];
+        uint16_t Xh = ATtiny13A.SRAM[27];
+        uint16_t X = (Xh << 8) | Xl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[--X];
+
+        ATtiny13A.SRAM[26] = X;
+        ATtiny13A.SRAM[27] = X >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (Y)", "1000000ddddd1000", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[Y];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (Y+)", "1001000ddddd1001", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[Y++];
+
+        ATtiny13A.SRAM[28] = Y;
+        ATtiny13A.SRAM[29] = Y >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (-Y)", "1001000ddddd1010", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[--Y];
+
+        ATtiny13A.SRAM[28] = Y;
+        ATtiny13A.SRAM[29] = Y >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (Z)", "1000000ddddd0000", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[Z];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (Z+)", "1001000ddddd0001", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[Z++];
+
+        ATtiny13A.SRAM[30] = Z;
+        ATtiny13A.SRAM[31] = Z >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LD (-Z)", "1001000ddddd0010", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[--Z];
+
+        ATtiny13A.SRAM[30] = Z;
+        ATtiny13A.SRAM[31] = Z >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LDD (Y+q)", "10q0qq0ddddd1qqq", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        uint16_t q = (BIT_GET(instruction, 13) << 5) | (BIT_GET(instruction, 11) << 4) | (BIT_GET(instruction, 10) << 3) | (instruction & 0x7u);
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[Y + q];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("LDD (Z+q)", "10q0qq0ddddd0qqq", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t d = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        uint16_t q = (BIT_GET(instruction, 13) << 5) | (BIT_GET(instruction, 11) << 4) | (BIT_GET(instruction, 10) << 3) | (instruction & 0x7u);
+
+        ATtiny13A.SRAM[d] = ATtiny13A.SRAM[Z + q];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("STS (32bit)", "1001001rrrrr0000kkkkkkkkkkkkkkkk", 2, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint16_t k = ATtiny13A.FlashMemory[ATtiny13A.PC + 1];
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+        ATtiny13A.SRAM[k] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("STS (16bit)", "10101kkkrrrrkkkk", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0xFu) + 16;
+        uint8_t k = (BIT_GET_INV(instruction, 8) << 7) | (BIT_GET(instruction, 8) << 6) | (BIT_GET(instruction, 10) << 5) |
+            (BIT_GET(instruction, 9) << 4) | (BIT_GET(instruction, 3) << 3) | (BIT_GET(instruction, 2) << 2) | (BIT_GET(instruction, 1) << 1) | (BIT_GET(instruction, 0) << 0);
+
+        ATtiny13A.SRAM[k] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (X)", "1001001rrrrr1100", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Xl = ATtiny13A.SRAM[26];
+        uint16_t Xh = ATtiny13A.SRAM[27];
+        uint16_t X = (Xh << 8) | Xl;
+
+        ATtiny13A.SRAM[X] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (X+)", "1001001rrrrr1101", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Xl = ATtiny13A.SRAM[26];
+        uint16_t Xh = ATtiny13A.SRAM[27];
+        uint16_t X = (Xh << 8) | Xl;
+
+        ATtiny13A.SRAM[X++] = ATtiny13A.SRAM[r];
+
+        ATtiny13A.SRAM[26] = X;
+        ATtiny13A.SRAM[27] = X >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (-X)", "1001001rrrrr1110", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Xl = ATtiny13A.SRAM[26];
+        uint16_t Xh = ATtiny13A.SRAM[27];
+        uint16_t X = (Xh << 8) | Xl;
+
+        ATtiny13A.SRAM[--X] = ATtiny13A.SRAM[r];
+
+        ATtiny13A.SRAM[26] = X;
+        ATtiny13A.SRAM[27] = X >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (Y)", "1000001rrrrr1000", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        ATtiny13A.SRAM[Y] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (Y+)", "1001001rrrrr1001", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        ATtiny13A.SRAM[Y++] = ATtiny13A.SRAM[r];
+
+        ATtiny13A.SRAM[28] = Y;
+        ATtiny13A.SRAM[29] = Y >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (-Y)", "1001001rrrrr1010", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        ATtiny13A.SRAM[--Y] = ATtiny13A.SRAM[r];
+
+        ATtiny13A.SRAM[28] = Y;
+        ATtiny13A.SRAM[29] = Y >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (Z)", "1000001rrrrr0000", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        ATtiny13A.SRAM[Z] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (Z+)", "1001001rrrrr0001", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        ATtiny13A.SRAM[Z++] = ATtiny13A.SRAM[r];
+
+        ATtiny13A.SRAM[30] = Z;
+        ATtiny13A.SRAM[31] = Z >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("ST (-Z)", "1001001rrrrr0010", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        ATtiny13A.SRAM[--Z] = ATtiny13A.SRAM[r];
+
+        ATtiny13A.SRAM[30] = Z;
+        ATtiny13A.SRAM[31] = Z >> 8;
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("STD (Y+q)", "10q0qq1rrrrr1qqq", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Yl = ATtiny13A.SRAM[28];
+        uint16_t Yh = ATtiny13A.SRAM[29];
+        uint16_t Y = (Yh << 8) | Yl;
+
+        uint16_t q = (BIT_GET(instruction, 13) << 5) | (BIT_GET(instruction, 11) << 4) | (BIT_GET(instruction, 10) << 3) | (instruction & 0x7u);
+
+        ATtiny13A.SRAM[Y + q] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    InstructionSet.push_back(Instruction("STD (Z+q)", "10q0qq1rrrrr0qqq", 1, [](Emulator &ATtiny13A) -> void {
+        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
+        
+        /** Operation */
+        uint8_t r = ((instruction >> 4) & 0x1Fu);
+
+        uint16_t Zl = ATtiny13A.SRAM[30];
+        uint16_t Zh = ATtiny13A.SRAM[31];
+        uint16_t Z = (Zh << 8) | Zl;
+
+        uint16_t q = (BIT_GET(instruction, 13) << 5) | (BIT_GET(instruction, 11) << 4) | (BIT_GET(instruction, 10) << 3) | (instruction & 0x7u);
+
+        ATtiny13A.SRAM[Z + q] = ATtiny13A.SRAM[r];
+
+        /** PC */
+        ++ATtiny13A.PC;
+    }));
+
+    // LPM
+    // SPM
+    // IN
+    // OUT
+    // PUSH
+    // POP
+    // XCH
+    // LAS
+    // LAC
+    // LAT
+
     // ---------------------------------------------------------------------------------
     // Bit and Bit-set Instructions
     // ---------------------------------------------------------------------------------
