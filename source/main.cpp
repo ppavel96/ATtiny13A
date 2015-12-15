@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 #include "emulator.h"
 #include "cmd_parser.h"
@@ -8,8 +9,8 @@
 
 /** Determine if host is little endian */
 bool IsLittleEndian() {
-    const unsigned short x = 1;
-    return *((unsigned char *) &x) == 1;
+    const uint16_t x = 1;
+    return *((uint8_t *) &x) == 1;
 }
 
 /** Main */
@@ -22,14 +23,15 @@ int main(int argc, char** argv) {
     std::vector<CmdOption> Options;
     Options.push_back(CmdOption("--help",        "  --help                   Display this information",                  false));
     Options.push_back(CmdOption("-lifetime",     "  -lifetime N              Stop emulator after N ms. Default is 10",   true));
+
     Options.push_back(CmdOption("-eeprom_in",    "  -eeprom_in <file>        Initialize EEPROM with content of <file>",  true));
-    Options.push_back(CmdOption("-eeprom_out",   "  -in <file>               Specify <file> in CSV format as input",     true));
-    Options.push_back(CmdOption("-in",           "  -out <file>              Specify <file> in CSV format as output",    true));
+    Options.push_back(CmdOption("-eeprom_out",   "  -eeprom_out <file>       Specify <file> as file to save EEPROM in",  true));
+
+    Options.push_back(CmdOption("-in",           "  -in <file>               Specify <file> in CSV format as input",     true));
+    Options.push_back(CmdOption("-out",          "  -out <file>              Specify <file> in CSV format as output",    true));
+
     Options.push_back(CmdOption("-logfile",      "  -logfile <file>          Print log to <file>, not to stdout",        true));
-    Options.push_back(CmdOption("-logerr",       "  -logerr                  Enable error log",                          false));
-    Options.push_back(CmdOption("-logwarn",      "  -logwarn                 Enable warnings log",                       false));
-    Options.push_back(CmdOption("-logerr",       "  -logio                   Enable i/o log",                            false));
-    Options.push_back(CmdOption("-logio",        "  -logint                  Enable interrupt log",                      false));
+    Options.push_back(CmdOption("-logio",        "  -logio                   Enable i/o log",                            false));
     Options.push_back(CmdOption("-logint",       "  -logint                  Enable interrupt log",                      false));
     Options.push_back(CmdOption("-logall",       "  -logall                  Enable log of every instruction",           false));
 
@@ -41,7 +43,7 @@ int main(int argc, char** argv) {
     while (Parser.GetNext(OutOption)) {
         if (OutOption.GetName() == "--help") {
             Parser.DisplayHelp();
-            return 0;
+            return 1;
         }
 
         if (OutOption.GetName() == "-lifetime") {
@@ -63,7 +65,7 @@ int main(int argc, char** argv) {
             DefaultParams.infile = fopen(OutOption.GetArgAsString().c_str(), "r");
             if (DefaultParams.infile == nullptr) {
                 std::cout << "emulator: fatal error: coudn't open file named " << OutOption.GetArgAsString() << "\n";
-                return 0;
+                return 1;
             }
 
             continue;
@@ -73,7 +75,7 @@ int main(int argc, char** argv) {
             DefaultParams.outfile = fopen(OutOption.GetArgAsString().c_str(), "w");
             if (DefaultParams.outfile == nullptr) {
                 std::cout << "emulator: fatal error: coudn't open file named " << OutOption.GetArgAsString() << "\n";
-                return 0;
+                return 1;
             }
 
             continue;
@@ -83,34 +85,24 @@ int main(int argc, char** argv) {
             DefaultParams.logfile = fopen(OutOption.GetArgAsString().c_str(), "w");
             if (DefaultParams.logfile == nullptr) {
                 std::cout << "emulator: fatal error: coudn't open file named " << OutOption.GetArgAsString() << "\n";
-                return 0;
+                return 1;
             }
 
             continue;
         }
 
-        if (OutOption.GetName() == "-logerr") {
-            DefaultParams.LogMode = (ELogMode)(DefaultParams.LogMode | ELogMode::Errors);
-            continue;
-        }
-
-        if (OutOption.GetName() == "-logwarn") {
-            DefaultParams.LogMode = (ELogMode)(DefaultParams.LogMode | ELogMode::Warnings);
-            continue;
-        }
-
         if (OutOption.GetName() == "-logio") {
-            DefaultParams.LogMode = (ELogMode)(DefaultParams.LogMode | ELogMode::InOut);
+            DefaultParams.LogMode.InOut = 1;
             continue;
         }
 
         if (OutOption.GetName() == "-logint") {
-            DefaultParams.LogMode = (ELogMode)(DefaultParams.LogMode | ELogMode::Interrupts);
+            DefaultParams.LogMode.Interrupt = 1;
             continue;
         }
 
         if (OutOption.GetName() == "-logall")  {
-            DefaultParams.LogMode = (ELogMode)(DefaultParams.LogMode | ELogMode::All);    
+            DefaultParams.LogMode.Detailed = 1;
             continue;    
         }
         
@@ -119,20 +111,20 @@ int main(int argc, char** argv) {
 
     if (Flash.empty()) {
         std::cout << "emulator: fatal error: no flash file\n";
-        return 0;
+        return 1;
     }
 
     // Reading flash
-    std::vector<unsigned short> FlashMemory(1024);
-    ImageManager::ReadImage(Flash.c_str(), (unsigned char*)FlashMemory.data(), FlashMemory.size() * 2);
+    std::vector<uint16_t> FlashMemory(512);
+    ImageManager::ReadHexImage(Flash.c_str(), (uint8_t*)FlashMemory.data(), FlashMemory.size() * 2);
     if (!IsLittleEndian())
         for (size_t i = 0, sz = FlashMemory.size(); i < sz; ++i)
             FlashMemory[i] = (FlashMemory[i] << 8) + (FlashMemory[i] >> 8);
     
     // Reading EEPROM
-    std::vector<unsigned char> EEPROMMemory(64);
+    std::vector<uint8_t> EEPROMMemory(64);
     if (!EEPROM_IN.empty())
-        ImageManager::ReadImage(EEPROM_IN.c_str(), EEPROMMemory.data(), EEPROMMemory.size());
+        ImageManager::ReadHexImage(EEPROM_IN.c_str(), EEPROMMemory.data(), EEPROMMemory.size());
 
     // Emulation
     Emulator ATtiny13A(std::move(FlashMemory), std::move(EEPROMMemory), DefaultParams);

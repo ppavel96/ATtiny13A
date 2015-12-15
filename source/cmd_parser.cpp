@@ -22,10 +22,10 @@ int CmdOption::GetArgAsInt() const {
         return res;
     } catch (const std::invalid_argument&) {
         std::cout << "emulator: fatal error: " << Arg << " is not a number\n";
-        exit(0);
+        exit(1);
     } catch (const std::out_of_range&) {
         std::cout << "emulator: fatal error: " << Arg << " is too big\n";
-        exit(0);
+        exit(1);
     }
 }
 
@@ -43,7 +43,7 @@ bool CmdParser::GetNext(CmdOption& OutOption) {
         return false;
     
     bool Flag = false;
-    for (auto i : Options)
+    for (const auto& i : Options)
         if (i.GetName() == CmdArgs[Current]) {
             OutOption = i;
             Flag = true;
@@ -53,7 +53,7 @@ bool CmdParser::GetNext(CmdOption& OutOption) {
     if (!Flag) {
         if (CmdArgs[Current][0] == '-') {
             std::cout << "emulator: fatal error: unrecognized command line option " << CmdArgs[Current] << "\n";
-            exit(0);
+            exit(1);
         }
 
         OutOption.Name = CmdArgs[Current++];
@@ -63,7 +63,7 @@ bool CmdParser::GetNext(CmdOption& OutOption) {
     if (OutOption.HasArg) {
         if (++Current == CmdArgs.size()) {
             std::cout << "emulator: fatal error: missing argument after " << OutOption.GetName() << "\n";
-            exit(0);
+            exit(1);
         }
 
         OutOption.Arg = CmdArgs[Current];
@@ -77,7 +77,7 @@ void CmdParser::DisplayHelp() const {
     std::cout << "Usage: emulator [options] flash_file...\n";
     std::cout << "Options:\n";
 
-    for (auto i : Options)
+    for (const auto& i : Options)
         std::cout << i.GetHelp() << '\n';
     
     std::cout << "\n";

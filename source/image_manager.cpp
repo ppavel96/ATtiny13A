@@ -6,71 +6,44 @@
 FILE* ImageManager::OpenFile(const char *FileName, const char *mode) {
     if (FileName == nullptr) {
         std::cout << "emulator: fatal error: no file name\n";
-        exit(0);
+        exit(1);
     }
 
     FILE *Image = fopen(FileName, mode);
     if (Image == nullptr) {
         std::cout << "emulator: fatal error: coudn't open file named " << FileName << "\n";
-        exit(0);
+        exit(1);
     }
 
     return Image;
 }
-
-EImageFormat ImageManager::DetermineImageFormat(FILE *Image) {
-    return EImageFormat::IntelHex;
-}
-
-void ImageManager::ReadImage(const char* FileName, unsigned char* buffer, size_t buffer_size) {
-    FILE* Image = OpenFile(FileName, "r");
-    EImageFormat Format = DetermineImageFormat(Image);
-
-    switch (Format) {
-        case EImageFormat::IntelHex:
-            ReadHexImage(Image, buffer, buffer_size);
-            break;
-
-        case EImageFormat::Elf:
-            ReadElfImage(Image, buffer, buffer_size);
-            break;
-
-        case EImageFormat::Unknown:
-            std::cout << "emulator: fatal error: file " << FileName << " has incorrect format or is corrupted\n";
-            exit(0);
-    }
-
-    fclose(Image);
-}
-
-void ImageManager::ReadElfImage(FILE *Image, unsigned char* buffer, size_t buffer_size) {
-    // Not implemented yet
-}
     
-void ImageManager::ReadHexImage(FILE *Image, unsigned char* buffer, size_t buffer_size) {
-    unsigned int line_number = 1;
-    unsigned int address_offset = 0;
+void ImageManager::ReadHexImage(const char* FileName, uint8_t* buffer, size_t buffer_size) {
+    FILE* Image = OpenFile(FileName, "r");
+
+    uint32_t line_number = 1;
+    uint32_t address_offset = 0;
 
     while (true) {
-        unsigned int data_size, address, data_type;
+        uint32_t data_size, address, data_type;
 
-        if (fscanf(Image, " :%02x", &data_size) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
-        if (fscanf(Image, "%04x",   &address) != 1)   { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
-        if (fscanf(Image, "%02x",   &data_type) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
+        if (fscanf(Image, " :%02x", &data_size) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
+        if (fscanf(Image, "%04x",   &address) != 1)   { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
+        if (fscanf(Image, "%02x",   &data_type) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
 
-        unsigned int control_sum = data_size + address + data_type;
+        uint32_t control_sum = data_size + address + data_type;
 
         switch (data_type) {
             case 0:
-                for (unsigned int i = 0; i < data_size; ++i) {
-                    unsigned int absolute_offset = address_offset + address + i;
+                for (uint32_t i = 0; i < data_size; ++i) {
+                    uint32_t absolute_offset = address_offset + address + i;
                     if (absolute_offset >= buffer_size) {
                         std::cout << "emulator: fatal error: image is too big for attiny13a\n";
-                        exit(0);
+                        exit(1);
                     }
 
-                    unsigned char *temp = buffer + absolute_offset;
-                    if (fscanf(Image, "%02hhx", temp) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
+                    uint8_t *temp = buffer + absolute_offset;
+                    if (fscanf(Image, "%02hhx", temp) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
                     control_sum += *temp;
                 }
 
@@ -80,31 +53,33 @@ void ImageManager::ReadHexImage(FILE *Image, unsigned char* buffer, size_t buffe
                 break;
 
             case 2:
-                if (fscanf(Image, "%04x", &address_offset) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
+                if (fscanf(Image, "%04x", &address_offset) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
                 address_offset *= 16;
                 break;
 
             case 4:
-                if (fscanf(Image, "%04x", &address_offset) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
+                if (fscanf(Image, "%04x", &address_offset) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
                 address_offset <<= 16;
                 break;
 
             default:
                 std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n";
-                exit(0);
+                exit(1);
         }
 
-        unsigned int control;
-        if (fscanf(Image, "%02x", &control) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(0); }
+        uint32_t control;
+        if (fscanf(Image, "%02x", &control) != 1) { std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << "\n"; exit(1); }
         control_sum += control;
 
         if (control_sum % 256 != 0) {
             std::cout << "emulator: fatal error: hex file is corrupted, line " << line_number << ", control sum is " << control_sum % 256 << "\n";
-            exit(0);
+            exit(1);
         }
 
-        if (data_type == 1)
+        if (data_type == 1) {
+            fclose(Image);
             return;
+        }
 
         ++line_number;
     }

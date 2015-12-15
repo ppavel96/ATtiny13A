@@ -1,60 +1,66 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <cstdio>
 #include <ctime>
 
-/** All consts lie here */
-struct HardwareInfo {
-    // Ammount of memory in bytes
-    size_t FlashMemory, EEPROM, SRAM;
+/** Log mode */
+struct LogFlags {
+    uint32_t Interrupt : 1;
+    uint32_t InOut : 1;
+    uint32_t Detailed : 1;
 
-    HardwareInfo() : FlashMemory(1024),
-                     EEPROM(64),
-                     SRAM(64) { }
-};
-
-/** Log mode enum */
-enum ELogMode {
-    Silent     = 0,
-    Errors     = (1 << 0),
-    Warnings   = (1 << 1),
-    Interrupts = (1 << 2),
-    InOut      = (1 << 3),
-    All        = (1 << 4)
+    LogFlags() : Interrupt(0),
+                 InOut(0),
+                 Detailed(0) {}
 };
 
 /** Emulation params */
 struct RunParams {
-    FILE *logfile;
-    FILE *infile, *outfile;
-
+    FILE *logfile, *infile, *outfile;
+    LogFlags LogMode;
     time_t lifetime;
-    ELogMode LogMode;
 
     RunParams() : logfile(stdout),
                   infile(nullptr),
                   outfile(nullptr),
-                  lifetime(10),
-                  LogMode(ELogMode::Silent) { }
+                  lifetime(10) {}
+};
+
+/** Instruction of AVR microcontroller */
+class Instruction {
+    std::string Name, Opcode;
+    uint16_t Size;
+
+    void (*Func)(class Emulator &ATtiny13A);
+
+public:
+    /** Creates instruction with a given name, opcode and function to execute */
+    Instruction(std::string InName, std::string InOpcode, uint16_t InSize, void (*InFunc)(class Emulator &ATtiny13A));
+
+    /** Checks if opcode matches and executes Func */
+    bool TryExecute(class Emulator &ATtiny13A);
 };
 
 /** Emulator of ATtiny13A */
 class Emulator {
-    std::vector<unsigned short> FlashMemory;
-    std::vector<unsigned char> EEPROM, SRAM;
-    unsigned short PC;
+    std::vector<uint16_t> FlashMemory;
+    std::vector<uint8_t> EEPROM, SRAM;
+    std::vector<Instruction> InstructionSet;
+    uint16_t PC;
 
-    HardwareInfo Info;
     RunParams Params;
+
+    /** Whether next instruction should be skipped */
+    bool Skip;
 
     /** Checks for interrupt and launch ISR if needed. Returns true if interrupt happened */
     bool CheckForInterrupt();
 
 public:
     /** Creates an emulator and uploads flash and EEPROM images in it */
-    Emulator(const std::vector<unsigned short> &InFlashMemory, const std::vector<unsigned char> &InEEPROM, const RunParams& InParams);
-
+    Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector<uint8_t> &InEEPROM, const RunParams& InParams);
     Emulator(const Emulator&) = delete;
     Emulator& operator=(const Emulator&) = delete;
 
@@ -64,18 +70,17 @@ public:
     /** Processes the next instruction */
     void ProcessInstruction();
 
-    /** Retrieve info about hardware */
-    inline const HardwareInfo& GetHardwareInfo() const { return Info; }
-
     /** Get image of flash memory */
-    inline const std::vector<unsigned short>& GetFlashMemory() const { return FlashMemory; }
+    inline const std::vector<uint16_t>& GetFlashMemory() const { return FlashMemory; }
 
     /** Get image of EEPROM */
-    inline const std::vector<unsigned char>& GetEEPROM() const { return EEPROM; }
+    inline const std::vector<uint8_t>& GetEEPROM() const { return EEPROM; }
 
     /** Get image of SRAM */
-    inline const std::vector<unsigned char>& GetSRAM() const { return SRAM; }
+    inline const std::vector<uint8_t>& GetSRAM() const { return SRAM; }
 
     /** Get PC */
-    inline unsigned short GetPC() const { return PC; }
+    inline uint16_t GetPC() const { return PC; }
+
+    friend Instruction;
 };
