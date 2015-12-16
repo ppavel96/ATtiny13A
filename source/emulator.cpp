@@ -1763,17 +1763,22 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
     }));
 }
 
-bool Emulator::CheckForInterrupt() {
-    return false;
+void Emulator::CheckForInterrupt() {
+    // Interruptes are disabled
+    if (BIT_GET(SRAM[0x5Fu], 7) == 0)
+        return;
+
+    
 }
 
 void Emulator::Run() {
     std::clock_t start_time = std::clock();
 
     while (true) {
-        if (!CheckForInterrupt())
-            ProcessInstruction();
+        CheckForInterrupt();
+        ProcessInstruction();
 
+        // End condition
         if ((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000) > Params.lifetime)
             return;
     }

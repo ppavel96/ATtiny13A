@@ -55,8 +55,8 @@ class Emulator {
     /** Whether next instruction should be skipped */
     bool Skip;
 
-    /** Checks for interrupt and launch ISR if needed. Returns true if interrupt happened */
-    bool CheckForInterrupt();
+    /** Checks for interrupt and launch ISR if needed */
+    void CheckForInterrupt();
 
 public:
     /** Creates an emulator and uploads flash and EEPROM images in it */

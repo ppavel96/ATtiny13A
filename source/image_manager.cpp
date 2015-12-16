@@ -85,6 +85,20 @@ void ImageManager::ReadHexImage(const char* FileName, uint8_t* buffer, size_t bu
     }
 }
 
-void ImageManager::WriteHexImage(const char* FileName, const unsigned char* buffer, size_t buffer_size) {
-    // Not implemented yet
+void ImageManager::WriteHexImage(const char* FileName, const uint8_t* buffer, size_t buffer_size) {
+    FILE* Image = OpenFile(FileName, "w");
+
+    // As we are going to save only eeprom which consists only of 64 bytes the following code is OK
+    uint8_t control_sum = 0x40u;
+    fprintf(Image, ":40000000");
+
+    for (size_t i = 0; i < buffer_size; ++i) {
+        fprintf(Image, "%02hhx", buffer[i]);
+        control_sum += buffer[i];
+    }
+
+    fprintf(Image, "%02hhx\n", ~control_sum + 1);
+    fprintf(Image, ":00000001FF\n");
+
+    fclose(Image);
 }
