@@ -28,6 +28,14 @@ struct RunParams {
                   lifetime(10) {}
 };
 
+/** Emulator sleep modes */
+enum class EmulatorState {
+    Working,
+    Idle,
+    ADCNoiseReduction,
+    PowerDown
+};
+
 /** Instruction of AVR microcontroller */
 class Instruction {
     std::string Name, Opcode;
@@ -51,9 +59,13 @@ class Emulator {
     uint16_t PC;
 
     RunParams Params;
+    EmulatorState State;
 
     /** Whether next instruction should be skipped */
     bool Skip;
+
+    /** When the AVR exits from an interrupt, it will always return to the main program and execute one more instruction before any pending interrupt is served */
+    bool CanInterrupt;
 
     /** Checks for interrupt and launch ISR if needed */
     void CheckForInterrupt();

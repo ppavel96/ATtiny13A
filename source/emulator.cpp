@@ -55,7 +55,7 @@ bool Instruction::TryExecute(class Emulator &ATtiny13A) {
 }
 
 Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector<uint8_t> &InEEPROM, const RunParams& InParams) :
-    FlashMemory(InFlashMemory), EEPROM(InEEPROM), SRAM(std::vector<uint8_t>(160)), PC(0), Params(InParams), Skip(false) {
+    FlashMemory(InFlashMemory), EEPROM(InEEPROM), SRAM(std::vector<uint8_t>(160)), PC(0), Params(InParams), State(EmulatorState::Working), Skip(false), CanInterrupt(true) {
     // First log line
     if (Params.LogMode.Detailed)
         fprintf(Params.logfile, "PC   Opcode           Instruction R0  R1  R2  R3  R4  R5  R6  R7  R8  R9  R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 R30 R31 SPL SREG    \n");
@@ -703,17 +703,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         ATtiny13A.PC |= ((uint16_t)ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]]) << 8;
 
         /** SREG */
-        uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
-        ZF = BIT_GET(ATtiny13A.SRAM[SREG], 1);
-        NF = BIT_GET(ATtiny13A.SRAM[SREG], 2);
-        VF = BIT_GET(ATtiny13A.SRAM[SREG], 3);
-        SF = BIT_GET(ATtiny13A.SRAM[SREG], 4);
-        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
-        IF = 1;
+        ATtiny13A.SRAM[SREG] |= 1 << 7;
 
-        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        /** Disable interrupts for one instruction */
+        ATtiny13A.CanInterrupt = false;
     }));
 
     InstructionSet.push_back(Instruction("CPSE", "000100rdddddrrrr", 1, [](Emulator &ATtiny13A) -> void {
@@ -1759,6 +1752,22 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
     // MCU Control Instructions
     // ---------------------------------------------------------------------------------
 
+    InstructionSet.push_back(Instruction("SLEEP", "1001010110001000", 1, [](Emulator &ATtiny13A) -> void {
+        if (BIT_GET(ATtiny13A.SRAM[MCUCR], 5) == 1) {
+            uint8_t SM1 = BIT_GET(ATtiny13A.SRAM[MCUCR], 4);
+            uint8_t SM0 = BIT_GET(ATtiny13A.SRAM[MCUCR], 3);
+
+            if (SM1 == 0 && SM0 == 0)
+                ATtiny13A.State = EmulatorState::Idle;
+            if (SM1 == 0 && SM0 == 1)
+                ATtiny13A.State = EmulatorState::ADCNoiseReduction;
+            if (SM1 == 1 && SM0 == 1)
+                ATtiny13A.State = EmulatorState::PowerDown;
+        }
+
+        ++ATtiny13A.PC;
+    }));
+
     // It is the last instruction with opcode set to **************** on purpose
     InstructionSet.push_back(Instruction("NOP", "****************", 1, [](Emulator &ATtiny13A) -> void {
         ++ATtiny13A.PC;
@@ -1770,6 +1779,11 @@ void Emulator::CheckForInterrupt() {
     if (BIT_GET(SRAM[SREG], 7) == 0)
         return;
 
+    if (!CanInterrupt) {
+        CanInterrupt = true;
+        return;
+    }
+
     
 }
 
@@ -1778,7 +1792,8 @@ void Emulator::Run() {
 
     while (true) {
         CheckForInterrupt();
-        ProcessInstruction();
+        if (State == EmulatorState::Working)
+            ProcessInstruction();
 
         // End condition
         if ((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000) > Params.lifetime)
