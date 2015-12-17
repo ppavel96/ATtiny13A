@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include "emulator.h"
 
+#include "regdef.h"
+
 #define BIT_GET(a,b)     (((a) >> (b)) & 1u)
 #define BIT_GET_INV(a,b) ((((a) >> (b)) & 1u) ^ 1u)
 #define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
@@ -47,7 +49,7 @@ bool Instruction::TryExecute(class Emulator &ATtiny13A) {
         PCLog, BYTETOBINARY(ATtiny13A.FlashMemory[PCLog] >> 8), BYTETOBINARY(ATtiny13A.FlashMemory[PCLog]), Name.c_str(), ATtiny13A.SRAM[0], ATtiny13A.SRAM[1], ATtiny13A.SRAM[2], ATtiny13A.SRAM[3],
         ATtiny13A.SRAM[4], ATtiny13A.SRAM[5], ATtiny13A.SRAM[6], ATtiny13A.SRAM[7], ATtiny13A.SRAM[8], ATtiny13A.SRAM[9], ATtiny13A.SRAM[10], ATtiny13A.SRAM[11], ATtiny13A.SRAM[12], ATtiny13A.SRAM[13],
         ATtiny13A.SRAM[14], ATtiny13A.SRAM[15], ATtiny13A.SRAM[16], ATtiny13A.SRAM[17], ATtiny13A.SRAM[18], ATtiny13A.SRAM[19], ATtiny13A.SRAM[20], ATtiny13A.SRAM[21], ATtiny13A.SRAM[22], ATtiny13A.SRAM[23],
-        ATtiny13A.SRAM[24], ATtiny13A.SRAM[25], ATtiny13A.SRAM[26], ATtiny13A.SRAM[27], ATtiny13A.SRAM[28], ATtiny13A.SRAM[29], ATtiny13A.SRAM[30], ATtiny13A.SRAM[31], ATtiny13A.SRAM[0x5D], BYTETOBINARY(ATtiny13A.SRAM[0x5F]));
+        ATtiny13A.SRAM[24], ATtiny13A.SRAM[25], ATtiny13A.SRAM[26], ATtiny13A.SRAM[27], ATtiny13A.SRAM[28], ATtiny13A.SRAM[29], ATtiny13A.SRAM[30], ATtiny13A.SRAM[31], ATtiny13A.SRAM[SPL], BYTETOBINARY(ATtiny13A.SRAM[SREG]));
 
     return true;
 }
@@ -83,10 +85,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET(Rr, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET_INV(Rr, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET(Rd, 3) & BIT_GET(Rr, 3)) | (BIT_GET(Rr, 3) & BIT_GET_INV(R, 3)) | (BIT_GET_INV(R, 3) & BIT_GET(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -101,7 +103,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         uint8_t Rd = ATtiny13A.SRAM[d];
         uint8_t Rr = ATtiny13A.SRAM[r];
-        uint8_t R  = ATtiny13A.SRAM[d] = Rd + Rr + BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        uint8_t R  = ATtiny13A.SRAM[d] = Rd + Rr + BIT_GET(ATtiny13A.SRAM[SREG], 0);
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
@@ -111,10 +113,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET(Rr, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET_INV(Rr, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET(Rd, 3) & BIT_GET(Rr, 3)) | (BIT_GET(Rr, 3) & BIT_GET_INV(R, 3)) | (BIT_GET_INV(R, 3) & BIT_GET(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -142,11 +144,11 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         NF = BIT_GET(R, 15);
         VF = BIT_GET_INV(Rdh, 7) & BIT_GET(R, 15);
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -171,10 +173,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(Rr, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(Rr, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(Rr, 3)) | (BIT_GET(Rr, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -198,10 +200,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(K, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(K, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(K, 3)) | (BIT_GET(K, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -216,7 +218,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         uint8_t Rd = ATtiny13A.SRAM[d];
         uint8_t Rr = ATtiny13A.SRAM[r];
-        uint8_t R  = ATtiny13A.SRAM[d] = Rd - Rr - BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        uint8_t R  = ATtiny13A.SRAM[d] = Rd - Rr - BIT_GET(ATtiny13A.SRAM[SREG], 0);
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
@@ -226,10 +228,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(Rr, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(Rr, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(Rr, 3)) | (BIT_GET(Rr, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -243,7 +245,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t K = ((instruction >> 4) & 0xF0u) + (instruction & 0xFu);
 
         uint8_t Rd = ATtiny13A.SRAM[d];
-        uint8_t R  = ATtiny13A.SRAM[d] = Rd - K - BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        uint8_t R  = ATtiny13A.SRAM[d] = Rd - K - BIT_GET(ATtiny13A.SRAM[SREG], 0);
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
@@ -253,10 +255,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(K, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(K, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(K, 3)) | (BIT_GET(K, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -284,11 +286,11 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         NF = BIT_GET(R, 15);
         VF = BIT_GET(Rdh, 7) & BIT_GET_INV(R, 15);
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -307,16 +309,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = 0;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -334,16 +336,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = 0;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -362,16 +364,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = 0;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -389,16 +391,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = 0;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -417,16 +419,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = 0;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -448,11 +450,11 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         NF = BIT_GET(R, 7);
         VF = 0;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -475,10 +477,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (R == 0x80) ? 1u : 0u;
         SF = NF ^ VF;
         HF = BIT_GET(R, 3) | BIT_GET_INV(Rd, 3);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -495,16 +497,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t  CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = (R == 0x80) ? 1u : 0u;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -521,16 +523,16 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /* Setting SREG */
         uint8_t  CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
         ZF = (R == 0) ? 1u : 0u;
         NF = BIT_GET(R, 7);
         VF = (Rd == 0x80) ? 1u : 0u;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -554,14 +556,14 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
         CF = BIT_GET(R, 15);
         ZF = (R == 0) ? 1u : 0u;
-        NF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 2);
-        VF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 3);
-        SF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 4);
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        NF = BIT_GET(ATtiny13A.SRAM[SREG], 2);
+        VF = BIT_GET(ATtiny13A.SRAM[SREG], 3);
+        SF = BIT_GET(ATtiny13A.SRAM[SREG], 4);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -587,14 +589,14 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
         CF = BIT_GET(R, 15);
         ZF = (R == 0) ? 1u : 0u;
-        NF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 2);
-        VF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 3);
-        SF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 4);
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        NF = BIT_GET(ATtiny13A.SRAM[SREG], 2);
+        VF = BIT_GET(ATtiny13A.SRAM[SREG], 3);
+        SF = BIT_GET(ATtiny13A.SRAM[SREG], 4);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -620,14 +622,14 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
         CF = BIT_GET(R, 15);
         ZF = (R == 0) ? 1u : 0u;
-        NF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 2);
-        VF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 3);
-        SF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 4);
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        NF = BIT_GET(ATtiny13A.SRAM[SREG], 2);
+        VF = BIT_GET(ATtiny13A.SRAM[SREG], 3);
+        SF = BIT_GET(ATtiny13A.SRAM[SREG], 4);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -655,9 +657,9 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
     InstructionSet.push_back(Instruction("RCALL", "1101kkkkkkkkkkkk", 1, [](Emulator &ATtiny13A) -> void {
         /** Stack */
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du] - 1] = ATtiny13A.PC + 1;
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]] = (ATtiny13A.PC + 1) >> 8;
-        ATtiny13A.SRAM[0x5Du] -= 2;
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL] - 1] = ATtiny13A.PC + 1;
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]] = (ATtiny13A.PC + 1) >> 8;
+        ATtiny13A.SRAM[SPL] -= 2;
 
         /** PC */
         uint16_t k = ATtiny13A.FlashMemory[ATtiny13A.PC] & 0x07FFu;
@@ -669,9 +671,9 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
     InstructionSet.push_back(Instruction("ICALL", "1001010100001001", 1, [](Emulator &ATtiny13A) -> void {
         /** Stack */
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du] - 1] = ATtiny13A.PC + 1;
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]] = (ATtiny13A.PC + 1) >> 8;
-        ATtiny13A.SRAM[0x5Du] -= 2;
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL] - 1] = ATtiny13A.PC + 1;
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]] = (ATtiny13A.PC + 1) >> 8;
+        ATtiny13A.SRAM[SPL] -= 2;
 
         /** PC */
         ATtiny13A.PC = (ATtiny13A.SRAM[31] << 8) | ATtiny13A.SRAM[30];
@@ -679,9 +681,9 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
     InstructionSet.push_back(Instruction("CALL", "1001010kkkkk111kkkkkkkkkkkkkkkkk", 2, [](Emulator &ATtiny13A) -> void {
         /** Stack */
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du] - 1] = ATtiny13A.PC + 1;
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]] = (ATtiny13A.PC + 1) >> 8;
-        ATtiny13A.SRAM[0x5Du] -= 2;
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL] - 1] = ATtiny13A.PC + 1;
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]] = (ATtiny13A.PC + 1) >> 8;
+        ATtiny13A.SRAM[SPL] -= 2;
 
         /** PC */
         ATtiny13A.PC = ATtiny13A.FlashMemory[ATtiny13A.PC + 1];
@@ -689,29 +691,29 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
     InstructionSet.push_back(Instruction("RET", "1001010100001000", 1, [](Emulator &ATtiny13A) -> void {
         /** Operation */
-        ATtiny13A.SRAM[0x5Du] += 2;
-        ATtiny13A.PC = ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du] - 1];
-        ATtiny13A.PC |= ((uint16_t)ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]]) << 8;
+        ATtiny13A.SRAM[SPL] += 2;
+        ATtiny13A.PC = ATtiny13A.SRAM[ATtiny13A.SRAM[SPL] - 1];
+        ATtiny13A.PC |= ((uint16_t)ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]]) << 8;
     }));
 
     InstructionSet.push_back(Instruction("RETI", "1001010100011000", 1, [](Emulator &ATtiny13A) -> void {
         /** Operation */
-        ATtiny13A.SRAM[0x5Du] += 2;
-        ATtiny13A.PC = ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du] - 1];
-        ATtiny13A.PC |= ((uint16_t)ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]]) << 8;
+        ATtiny13A.SRAM[SPL] += 2;
+        ATtiny13A.PC = ATtiny13A.SRAM[ATtiny13A.SRAM[SPL] - 1];
+        ATtiny13A.PC |= ((uint16_t)ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]]) << 8;
 
         /** SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
-        CF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
-        ZF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 1);
-        NF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 2);
-        VF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 3);
-        SF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 4);
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
+        CF = BIT_GET(ATtiny13A.SRAM[SREG], 0);
+        ZF = BIT_GET(ATtiny13A.SRAM[SREG], 1);
+        NF = BIT_GET(ATtiny13A.SRAM[SREG], 2);
+        VF = BIT_GET(ATtiny13A.SRAM[SREG], 3);
+        SF = BIT_GET(ATtiny13A.SRAM[SREG], 4);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
         IF = 1;
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
     }));
 
     InstructionSet.push_back(Instruction("CPSE", "000100rdddddrrrr", 1, [](Emulator &ATtiny13A) -> void {
@@ -750,10 +752,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(Rr, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(Rr, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(Rr, 3)) | (BIT_GET(Rr, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -768,7 +770,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         uint8_t Rd = ATtiny13A.SRAM[d];
         uint8_t Rr = ATtiny13A.SRAM[r];
-        uint8_t R  = Rd - Rr - BIT_GET(ATtiny13A.SRAM[0x5Fu], 0);
+        uint8_t R  = Rd - Rr - BIT_GET(ATtiny13A.SRAM[SREG], 0);
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
@@ -778,10 +780,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(Rr, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(Rr, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(Rr, 3)) | (BIT_GET(Rr, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -805,10 +807,10 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         VF = (BIT_GET(Rd, 7) & BIT_GET_INV(K, 7) & BIT_GET_INV(R, 7)) | (BIT_GET_INV(Rd, 7) & BIT_GET(K, 7) & BIT_GET(R, 7));
         SF = NF ^ VF;
         HF = (BIT_GET_INV(Rd, 3) & BIT_GET(K, 3)) | (BIT_GET(K, 3) & BIT_GET(R, 3)) | (BIT_GET(R, 3) & BIT_GET_INV(Rd, 3));
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -882,7 +884,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
 
         /** Operation */
-        if (BIT_GET(ATtiny13A.SRAM[0x5Fu], instruction & 0x7u) == 0) {
+        if (BIT_GET(ATtiny13A.SRAM[SREG], instruction & 0x7u) == 0) {
             uint8_t k = (instruction >> 3) & 0x3Fu;
             if (BIT_GET(instruction, 9) == 1)
                 ATtiny13A.PC += k - 0x3F;
@@ -900,7 +902,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
 
         /** Operation */
-        if (BIT_GET(ATtiny13A.SRAM[0x5Fu], instruction & 0x7u) == 1) {
+        if (BIT_GET(ATtiny13A.SRAM[SREG], instruction & 0x7u) == 1) {
             uint8_t k = (instruction >> 3) & 0x3Fu;
             if (BIT_GET(instruction, 9) == 1)
                 ATtiny13A.PC += k - 0x3F;
@@ -1487,8 +1489,8 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t d = ((instruction >> 4) & 0x1Fu);
         uint8_t Rd = ATtiny13A.SRAM[d];
 
-        ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]] = Rd;
-        --ATtiny13A.SRAM[0x5Du];
+        ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]] = Rd;
+        --ATtiny13A.SRAM[SPL];
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1500,8 +1502,8 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         /** Operation */
         uint8_t r = ((instruction >> 4) & 0x1Fu);
 
-        ++ATtiny13A.SRAM[0x5Du];
-        ATtiny13A.SRAM[r] = ATtiny13A.SRAM[ATtiny13A.SRAM[0x5Du]];
+        ++ATtiny13A.SRAM[SPL];
+        ATtiny13A.SRAM[r] = ATtiny13A.SRAM[ATtiny13A.SRAM[SPL]];
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1597,11 +1599,11 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         NF = 0;
         VF = NF ^ CF;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1614,7 +1616,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t d = (instruction >> 4) & 0x1Fu;
 
         uint8_t Rd = ATtiny13A.SRAM[d];
-        uint8_t R  = ATtiny13A.SRAM[d] = (Rd >> 1) | (BIT_GET(ATtiny13A.SRAM[0x5Fu], 0) << 7);
+        uint8_t R  = ATtiny13A.SRAM[d] = (Rd >> 1) | (BIT_GET(ATtiny13A.SRAM[SREG], 0) << 7);
 
         /* Setting SREG */
         uint8_t CF, ZF, NF, VF, SF, HF, TF, IF;
@@ -1623,11 +1625,11 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         NF = BIT_GET(R, 7);
         VF = NF ^ CF;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1649,11 +1651,11 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         NF = 0;
         VF = NF ^ CF;
         SF = NF ^ VF;
-        HF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 5);
-        TF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 6);
-        IF = BIT_GET(ATtiny13A.SRAM[0x5Fu], 7);
+        HF = BIT_GET(ATtiny13A.SRAM[SREG], 5);
+        TF = BIT_GET(ATtiny13A.SRAM[SREG], 6);
+        IF = BIT_GET(ATtiny13A.SRAM[SREG], 7);
 
-        ATtiny13A.SRAM[0x5Fu] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
+        ATtiny13A.SRAM[SREG] = CF + (ZF << 1) + (NF << 2) + (VF << 3) + (SF << 4) + (HF << 5) + (TF << 6) + (IF << 7);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1677,7 +1679,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /** Operation */
         uint8_t s = (instruction >> 4) & 0x7u;
-        ATtiny13A.SRAM[0x5Fu] |= 1 << s;
+        ATtiny13A.SRAM[SREG] |= 1 << s;
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1688,7 +1690,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
         /** Operation */
         uint8_t s = (instruction >> 4) & 0x7u;
-        ATtiny13A.SRAM[0x5Fu] &= ~(1 << s);
+        ATtiny13A.SRAM[SREG] &= ~(1 << s);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1729,9 +1731,9 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t b = instruction & 0x7u;
 
         if (BIT_GET(Rd, b))
-            ATtiny13A.SRAM[0x5Fu] |= 1 << 6;
+            ATtiny13A.SRAM[SREG] |= 1 << 6;
         else
-            ATtiny13A.SRAM[0x5Fu] &= ~(1 << 6);
+            ATtiny13A.SRAM[SREG] &= ~(1 << 6);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1744,7 +1746,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t d = (instruction >> 4) & 0x1Fu;
         uint8_t b = instruction & 0x7u;
 
-        if (BIT_GET(ATtiny13A.SRAM[0x5Fu], 6))
+        if (BIT_GET(ATtiny13A.SRAM[SREG], 6))
             ATtiny13A.SRAM[d] |= 1 << b;
         else
             ATtiny13A.SRAM[d] &= ~(1 << b);
@@ -1765,7 +1767,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 
 void Emulator::CheckForInterrupt() {
     // Interruptes are disabled
-    if (BIT_GET(SRAM[0x5Fu], 7) == 0)
+    if (BIT_GET(SRAM[SREG], 7) == 0)
         return;
 
     
