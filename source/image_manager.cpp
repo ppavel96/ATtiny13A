@@ -97,7 +97,9 @@ void ImageManager::WriteHexImage(const char* FileName, const uint8_t* buffer, si
         control_sum += buffer[i];
     }
 
-    fprintf(Image, "%02hhx\n", ~control_sum + 1);
+    control_sum = -control_sum;
+
+    fprintf(Image, "%02hhx\n", control_sum);
     fprintf(Image, ":00000001FF\n");
 
     fclose(Image);

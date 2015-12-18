@@ -1401,9 +1401,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         ++ATtiny13A.PC;
     }));
 
-    InstructionSet.push_back(Instruction("LPM", "1001010111001000", 1, [](Emulator &ATtiny13A) -> void {
-        uint16_t instruction = ATtiny13A.FlashMemory[ATtiny13A.PC];
-        
+    InstructionSet.push_back(Instruction("LPM", "1001010111001000", 1, [](Emulator &ATtiny13A) -> void {        
         /** Operation */
         uint16_t Zl = ATtiny13A.SRAM[30];
         uint16_t Zh = ATtiny13A.SRAM[31];
@@ -1661,7 +1659,7 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
         uint8_t d = (instruction >> 4) & 0x1Fu;
 
         uint8_t Rd = ATtiny13A.SRAM[d];
-        uint8_t R  = ATtiny13A.SRAM[d] = (Rd >> 4) | (Rd << 4);
+        ATtiny13A.SRAM[d] = (Rd >> 4) | (Rd << 4);
 
         /** PC */
         ++ATtiny13A.PC;
@@ -1775,7 +1773,27 @@ Emulator::Emulator(const std::vector<uint16_t> &InFlashMemory, const std::vector
 }
 
 void Emulator::CheckForInterrupt() {
-    // Interruptes are disabled
+    /** EEPROM */
+    if (BIT_GET(SRAM[EECR], 1)) {
+        if (BIT_GET(SRAM[EECR], 2)) {
+            if (BIT_GET(SRAM[EECR], 5) == 0)
+                EEPROM[SRAM[EEARL]] = 0;
+            if (BIT_GET(SRAM[EECR], 4) == 0)
+                EEPROM[SRAM[EEARL]] = SRAM[EEDR];
+        }
+
+        SRAM[EECR] &= ~(1 << 1);
+        SRAM[EECR] &= ~(1 << 2);
+
+        if (BIT_GET(SRAM[EECR], 3)) {
+            // EEPROM Ready interrupt
+        }
+    }
+
+    if (BIT_GET(SRAM[EECR], 0))
+        SRAM[EEDR] = EEPROM[EEARL];
+
+    /** Interrupts */
     if (BIT_GET(SRAM[SREG], 7) == 0)
         return;
 
@@ -1783,8 +1801,6 @@ void Emulator::CheckForInterrupt() {
         CanInterrupt = true;
         return;
     }
-
-    
 }
 
 void Emulator::Run() {

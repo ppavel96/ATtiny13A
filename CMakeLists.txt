@@ -5,5 +5,5 @@ include_directories (include)
 file (GLOB HEADERS include/*.h)
 file (GLOB SOURCES source/*.cpp)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
 add_executable (emulator ${SOURCES} ${HEADERS})
