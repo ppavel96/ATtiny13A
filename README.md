@@ -1,3 +1,4 @@
+### Поляков Павел Александрович, 146 <br>
 # ATtiny13A microcontroller emulator
 This repository contains ATtiny13A microcontroller emulator source code. It is capable of executing programs prepared by avra and avr-gcc compilers. For detailed info on emulator installation and usage see the end of this page <br>
 
@@ -22,6 +23,20 @@ Note that several instructions may appear by a different name in log due to the 
 
 # Usage
 To get futher instructions you can use ./bin/emulator --help <br>
+Usage: emulator [options] flash_file...  <br>
+Options:  <br>
+  --help&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Display this information  <br>
+  -lifetime N&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stop emulator after N ms. Default is 10  <br>
+  -eeprom_in <file>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Initialize EEPROM with content of <file>  <br>
+  -eeprom_out <file>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Specify <file> as file to save EEPROM in  <br>
+  -in <file>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Specify <file> in CSV format as input  <br>
+  -out <file>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Specify <file> in CSV format as output  <br>
+  -logfile <file>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Print log to <file>, not to stdout  <br>
+  -logio&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable i/o log  <br>
+  -logint&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable interrupt log  <br>
+  -logall&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable log of every instruction  <br> <br>
+  
+Please note that i/o and any logs are disabled by default <br>
 
 ### Example
 ./bin/emulator ./test/1.hex -lifetime 1 -logall -logfile log.txt
